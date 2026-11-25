@@ -142,7 +142,7 @@ namespace KhmerHeroes
             }
 
             // ---------- ប្រើ / និយាយ ----------
-            var it = Interactable.Nearest(transform.position, 2.8f);
+            var it = Interactable.Nearest(transform.position, 3.3f);
             UI.I.Prompt(it != null ? "[F] " + it.Prompt : "");
             if (InputX.Interact && it != null) it.Use(this);
 

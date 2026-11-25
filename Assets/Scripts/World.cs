@@ -149,9 +149,14 @@ namespace KhmerHeroes
 
         public static float PathX(float z) => Mathf.Sin(z / 37f) * 3f * (z > 285 && z < 395 ? 0.4f : 1f) * (Mathf.Abs(z - RiverZ) < RiverHalf + 10 ? 0 : 1) * (z > 555 ? 0 : 1);
 
-        static TerrainLayer Layer(Texture2D t, float tile)
+        static TerrainLayer Layer(Texture2D src, float tile)
         {
-            return new TerrainLayer { diffuseTexture = t, tileSize = new Vector2(tile, tile), smoothness = 0.05f };
+            // Terrain Standard យក alpha នៃរូបភាពជា "ភាពរលោង" — ដាក់ alpha ទាប ដើម្បីកុំឲ្យដីភ្លឺចាំងពេក
+            var t = new Texture2D(src.width, src.height, TextureFormat.RGBA32, true) { wrapMode = TextureWrapMode.Repeat };
+            var px = src.GetPixels();
+            for (int i = 0; i < px.Length; i++) px[i].a = 0.04f;
+            t.SetPixels(px); t.Apply();
+            return new TerrainLayer { diffuseTexture = t, tileSize = new Vector2(tile, tile), smoothness = 0f, metallic = 0f };
         }
 
         static Texture2D GrassTexture()

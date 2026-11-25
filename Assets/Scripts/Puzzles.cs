@@ -45,8 +45,8 @@ namespace KhmerHeroes
             var n = g.AddComponent<Npc>(); n.npcName = name;
             n.rig = HumanRig.Build(g.transform, st);
             var col = g.AddComponent<CapsuleCollider>(); col.height = 1.8f; col.radius = 0.35f; col.center = Vector3.up * 0.9f;
-            n.mark = Shapes.Glow(PrimitiveType.Cube, g.transform, Vector3.up * (2.3f * st.scale), new Vector3(0.12f, 0.35f, 0.12f), new Color(1f, 0.8f, 0.2f), 2.5f).transform;
-            Shapes.Glow(PrimitiveType.Cube, n.mark, new Vector3(0, -0.85f, 0), new Vector3(1f, 0.35f, 1f), new Color(1f, 0.8f, 0.2f), 2.5f);
+            n.mark = Shapes.Glow(PrimitiveType.Cube, g.transform, Vector3.up * (2.3f * st.scale), new Vector3(0.2f, 0.5f, 0.2f), new Color(1f, 0.8f, 0.2f), 2.5f).transform;
+            Shapes.Glow(PrimitiveType.Cube, n.mark, new Vector3(0, -0.8f, 0), new Vector3(1f, 0.3f, 1f), new Color(1f, 0.8f, 0.2f), 2.5f);
             return n;
         }
 

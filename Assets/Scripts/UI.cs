@@ -217,6 +217,7 @@ namespace KhmerHeroes
             bossBox.style.display = DisplayStyle.Flex; bossName.text = name; bossFill.style.width = Length.Percent(Mathf.Clamp01(frac) * 100);
         }
         public void Prompt(string t) { if (promptL.text != t) promptL.text = t ?? ""; }
+        void LateUpdate() { promptL.style.display = Busy ? DisplayStyle.None : DisplayStyle.Flex; }
 
         public void Toast(string text, float seconds = 2.6f)
         {
@@ -482,10 +483,14 @@ namespace KhmerHeroes
             col.Add(B("ត្រឡប់ទៅចំណុចចុងក្រោយ", () => { CloseModal(); restartCheckpoint(); }, 20, new Color(0.16f, 0.22f, 0.38f)));
             col.Add(B("ទៅម៉ឺនុយដើម", () => { CloseModal(); toTitle(); }, 20, new Color(0.25f, 0.25f, 0.28f)));
             b.Add(col);
-            var sens = L("ល្បឿនកណ្ដុរ៖ " + CamRig.Sensitivity.ToString("0.0"), 17); b.Add(sens);
-            var sl = new Slider(0.5f, 5f) { value = CamRig.Sensitivity }; sl.style.width = 360;
-            sl.RegisterValueChangedCallback(e => { CamRig.Sensitivity = e.newValue; sens.text = "ល្បឿនកណ្ដុរ៖ " + e.newValue.ToString("0.0"); });
-            b.Add(sl);
+            var row = new VisualElement(); row.style.flexDirection = FlexDirection.Row; row.style.alignItems = Align.Center; row.style.marginTop = 8;
+            var sens = L("", 18); sens.style.width = 200; sens.style.unityTextAlign = TextAnchor.MiddleCenter; sens.style.marginBottom = 0;
+            System.Action upd = () => sens.text = "ល្បឿនកណ្ដុរ៖ " + CamRig.Sensitivity.ToString("0.0");
+            upd();
+            var minus = B("−", () => { CamRig.Sensitivity = Mathf.Max(0.4f, CamRig.Sensitivity - 0.3f); upd(); }, 20, new Color(0.25f, 0.25f, 0.28f));
+            var plus = B("+", () => { CamRig.Sensitivity = Mathf.Min(6f, CamRig.Sensitivity + 0.3f); upd(); }, 20, new Color(0.25f, 0.25f, 0.28f));
+            row.Add(minus); row.Add(sens); row.Add(plus);
+            b.Add(row);
         }
 
         public void GameOver(Action retry, Action toTitle)

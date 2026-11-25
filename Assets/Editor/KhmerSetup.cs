@@ -17,7 +17,7 @@ namespace KhmerHeroes.EditorTools
 
         static KhmerSetup() { EditorApplication.delayCall += Run; }
 
-        [MenuItem("វីរជនខ្មែរ/រៀបចំគម្រោងឡើងវិញ (Setup)")]
+        [MenuItem("KhmerHeroes/Setup")]
         public static void Run()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
