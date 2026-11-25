@@ -194,7 +194,7 @@ namespace KhmerHeroes
             r.shadowCastingMode = ShadowCastingMode.Off;
         }
 
-        static void Lighting()
+        public static void Lighting()
         {
             var sunGo = new GameObject("Sun");
             var sun = sunGo.AddComponent<Light>();

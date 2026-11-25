@@ -18,7 +18,9 @@ namespace KhmerHeroes
         public static readonly Color Red = new Color(0.62f, 0.12f, 0.12f);
 
         VisualElement hud, screen, dlg, modal, modalBox, toastBox, numLayer, fade, bossBox, bossFill, crosshair;
-        Label bigL, raceL, mountL;
+        Label bigL, raceL, mountL, helpL;
+        VisualElement heroPanel;
+        readonly Dictionary<object, Label> tags = new Dictionary<object, Label>();
         float bigUntil;
         Label heroName, heroHp, skillL, coinsL, zoneL, objL, promptL, bossName, dlgWho, dlgText, dlgHint;
         VisualElement hpFill;
@@ -41,6 +43,8 @@ namespace KhmerHeroes
             ps.referenceResolution = new Vector2Int(1600, 900);
             ps.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
             ps.match = 0.5f;
+            var theme = Resources.Load<ThemeStyleSheet>("UnityDefaultRuntimeTheme");
+            if (theme != null) ps.themeStyleSheet = theme;
             var doc = gameObject.AddComponent<UIDocument>();
             doc.panelSettings = ps;
             root = doc.rootVisualElement;
@@ -188,7 +192,7 @@ namespace KhmerHeroes
                 r.Add(Bar(new Color(0.4f, 0.85f, 0.5f), out partyFill[i], 120, 8));
                 partyRow[i] = r; tl.Add(r);
             }
-            hud.Add(tl);
+            hud.Add(tl); heroPanel = tl;
 
             var tr = new VisualElement(); tr.style.position = Position.Absolute; tr.style.right = 20; tr.style.top = 16; tr.style.width = 420;
             tr.style.backgroundColor = new Color(0, 0, 0, 0.4f); Pad(tr, 14); Round(tr, 14); Border(tr, 2, new Color(Gold.r, Gold.g, Gold.b, 0.5f));
@@ -213,7 +217,7 @@ namespace KhmerHeroes
             crosshair.style.backgroundColor = new Color(1, 1, 1, 0.85f); Border(crosshair, 2, new Color(0, 0, 0, 0.6f)); hud.Add(crosshair);
 
             var help = L(Data.HelpText, 14, new Color(1, 1, 1, 0.75f)); help.style.position = Position.Absolute; help.style.bottom = 6; help.style.left = 0; help.style.right = 0;
-            help.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(help); hud.Add(help);
+            help.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(help); hud.Add(help); helpL = help;
         }
 
         public void ShowHud(bool on) => hud.style.display = on ? DisplayStyle.Flex : DisplayStyle.None;
@@ -468,6 +472,7 @@ namespace KhmerHeroes
             var sub = L("ហ្គេមផ្សងព្រេង · ប្រយុទ្ធ · ដោះប្រស្នា · ចំណេះដឹងទូទៅ · ប្រណាំងសត្វ", 18, new Color(1, 1, 1, 0.8f)); sub.style.marginBottom = 30; Shadow(sub); s.Add(sub);
             var col = new VisualElement(); col.style.width = 360;
             col.Add(B("ចាប់ផ្ដើមដំណើរ", start, 26));
+            col.Add(B("កោះឧបសគ្គ · លេងច្រើននាក់", () => Game.I.OpenCourseLobby(), 22, new Color(0.15f, 0.45f, 0.25f)));
             col.Add(B("របៀបលេង", () => Help(null), 22, new Color(0.16f, 0.22f, 0.38f)));
             col.Add(B("ចាកចេញ", quit, 22, new Color(0.25f, 0.25f, 0.28f)));
             s.Add(col);
@@ -556,5 +561,144 @@ namespace KhmerHeroes
         }
 
         public void Fade(float a) => fade.style.opacity = a;
+
+        // ---------------- កោះឧបសគ្គ ----------------
+        public void CourseHud(bool on)
+        {
+            heroPanel.style.display = on ? DisplayStyle.None : DisplayStyle.Flex;
+            helpL.text = on ? "WASD ដើរ · កណ្ដុរ បង្វិលកាមេរ៉ា · Space លោត · J/កណ្ដុរឆ្វេង រុញ (ប្រកួត) · ៥-៨ ពាក្យកំប្លែង · Enter ចាប់ផ្ដើម · Esc ម៉ឺនុយ" : Data.HelpText;
+            if (!on) ClearTags();
+        }
+
+        public void Tag(object key, string text, Vector3 world, bool show)
+        {
+            var cam = Camera.main;
+            if (!tags.TryGetValue(key, out var l))
+            {
+                l = L(text, 18, new Color(1f, 0.95f, 0.7f), true); l.style.position = Position.Absolute; Shadow(l);
+                l.style.backgroundColor = new Color(0, 0, 0, 0.45f); Pad(l, 4); Round(l, 6);
+                numLayer.Add(l); tags[key] = l;
+            }
+            if (l.text != text) l.text = text;
+            bool vis = show && cam != null && root.panel != null && cam.WorldToViewportPoint(world).z > 0;
+            l.style.display = vis ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!vis) return;
+            var pp = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, world, cam);
+            l.style.left = pp.x - 40; l.style.top = pp.y - 14;
+        }
+        public void RemoveTag(object key) { if (tags.TryGetValue(key, out var l)) { l.RemoveFromHierarchy(); tags.Remove(key); } }
+        public void ClearTags() { foreach (var l in tags.Values) l.RemoveFromHierarchy(); tags.Clear(); }
+
+        public void Waiting(string text)
+        {
+            var b = OpenModal(560);
+            b.Add(L(text, 26, Gold, true));
+            b.Add(L("សូមរង់ចាំបន្តិច...", 18, new Color(1, 1, 1, 0.7f)));
+        }
+
+        TextField Field(string value, int max, float width)
+        {
+            var tf = new TextField { value = value, maxLength = max };
+            tf.style.width = width; tf.style.fontSize = 20; tf.style.marginTop = 4; tf.style.marginBottom = 4;
+            tf.style.unityFontDefinition = fReg; Advanced(tf);
+            var input = tf.Q(className: TextField.inputUssClassName);
+            if (input != null)
+            {
+                input.style.backgroundColor = new Color(1f, 1f, 1f, 0.95f); input.style.color = Color.black;
+                input.style.unityFontDefinition = fReg; Advanced(input); input.style.minHeight = 38; Round(input, 8); Pad(input, 6);
+                input.style.fontSize = 20;
+            }
+            return tf;
+        }
+
+        /// <summary>ផ្ទាំងរៀបចំកោះឧបសគ្គ៖ ជ្រើសវីរជន ឈ្មោះ របៀបលេង និងការភ្ជាប់</summary>
+        public void CourseLobby(int hero, string pname, CourseMode mode, Action<int, string, CourseMode, int, string> go, Action back)
+        {
+            screen.Clear(); ShowHud(false);
+            var s = new VisualElement(); Fill(s); s.style.alignItems = Align.Center; s.style.justifyContent = Justify.Center; s.style.backgroundColor = new Color(0, 0, 0, 0.45f);
+            s.pickingMode = PickingMode.Position;
+            var p = Panel(1180); s.Add(p);
+            p.Add(L("កោះឧបសគ្គ", 44, Gold, false, true));
+            p.Add(L("ឆ្លងកាត់ក្បូនអណ្ដែត ដុំឈើយោល ដងបង្វិល ក្ដារស្រុត ស្គរលោត និងផ្លែដូងរមៀល ទៅដល់ពានមាស!", 18, new Color(1, 1, 1, 0.85f)));
+            p.Add(Ornament(500));
+
+            // វីរជន
+            p.Add(L("១. ជ្រើសវីរជន", 20, Gold, true));
+            var hr = new VisualElement(); hr.style.flexDirection = FlexDirection.Row;
+            for (int i = 0; i < Data.Heroes.Length; i++)
+            {
+                int k = i;
+                var b = B(Data.Heroes[i].name, () => CourseLobby(k, nameF.value == Data.Heroes[hero].name ? Data.Heroes[k].name : nameF.value, mode, go, back), 20, i == hero ? Red : new Color(0.2f, 0.2f, 0.24f));
+                b.style.width = 170; b.style.marginLeft = b.style.marginRight = 6; hr.Add(b);
+            }
+            p.Add(hr);
+
+            // ឈ្មោះ
+            var nr = new VisualElement(); nr.style.flexDirection = FlexDirection.Row; nr.style.alignItems = Align.Center; nr.style.marginTop = 6;
+            var nl = L("ឈ្មោះរបស់អ្នក៖", 20); nl.style.marginRight = 10; nr.Add(nl);
+            nameF = Field(string.IsNullOrEmpty(pname) ? Data.Heroes[hero].name : pname, 16, 340); nr.Add(nameF);
+            p.Add(nr);
+
+            // របៀបលេង (សម្រាប់ម្ចាស់បន្ទប់)
+            p.Add(L("២. របៀបលេង", 20, Gold, true));
+            var mr = new VisualElement(); mr.style.flexDirection = FlexDirection.Row;
+            string[] mn = { "ម្នាក់ឯង", "សាមគ្គី (ជួយគ្នា)", "ប្រកួត (ប្រណាំង)" };
+            for (int i = 0; i < 3; i++)
+            {
+                var m = (CourseMode)i;
+                var b = B(mn[i], () => CourseLobby(hero, nameF.value, m, go, back), 19, m == mode ? Red : new Color(0.2f, 0.2f, 0.24f));
+                b.style.width = 250; b.style.marginLeft = b.style.marginRight = 6; mr.Add(b);
+            }
+            p.Add(mr);
+
+            p.Add(L("៣. ចាប់ផ្ដើម", 20, Gold, true));
+            var row1 = new VisualElement(); row1.style.flexDirection = FlexDirection.Row; row1.style.alignItems = Align.Center;
+            var solo = B("លេងម្នាក់ឯង (គ្មានអ៊ីនធឺណិត)", () => go(hero, nameF.value, CourseMode.Solo, 0, null), 20, new Color(0.15f, 0.45f, 0.25f));
+            solo.style.marginRight = 10; row1.Add(solo);
+            var hostB = B("បង្កើតបន្ទប់អនឡាញ", () => go(hero, nameF.value, mode == CourseMode.Solo ? CourseMode.Coop : mode, 1, null), 20);
+            row1.Add(hostB);
+            p.Add(row1);
+
+            var row2 = new VisualElement(); row2.style.flexDirection = FlexDirection.Row; row2.style.alignItems = Align.Center;
+            var cl = L("លេខកូដបន្ទប់៖", 19); cl.style.marginRight = 8; row2.Add(cl);
+            var codeF = Field("", 12, 220); row2.Add(codeF);
+            var joinB = B("ចូលបន្ទប់", () => go(hero, nameF.value, mode, 2, codeF.value), 20, new Color(0.16f, 0.22f, 0.38f)); joinB.style.marginLeft = 10; row2.Add(joinB);
+            p.Add(row2);
+
+            var row3 = new VisualElement(); row3.style.flexDirection = FlexDirection.Row; row3.style.alignItems = Align.Center;
+            var il = L("Wi-Fi តែមួយ (LAN)៖ IP", 17, new Color(1, 1, 1, 0.75f)); il.style.marginRight = 8; row3.Add(il);
+            var ipF = Field("192.168.", 40, 220); row3.Add(ipF);
+            var lanJ = B("ចូលតាម IP", () => go(hero, nameF.value, mode, 4, ipF.value), 17, new Color(0.25f, 0.25f, 0.28f)); lanJ.style.marginLeft = 8; row3.Add(lanJ);
+            var lanH = B("បង្កើត LAN", () => go(hero, nameF.value, mode == CourseMode.Solo ? CourseMode.Coop : mode, 3, null), 17, new Color(0.25f, 0.25f, 0.28f)); lanH.style.marginLeft = 8; row3.Add(lanH);
+            p.Add(row3);
+
+            p.Add(B("ត្រឡប់ក្រោយ", back, 18, new Color(0.25f, 0.25f, 0.28f)));
+            screen.Add(s);
+        }
+        TextField nameF;
+
+        public void CourseResults(string[] rows, string note, bool isHost, Action again, Action leave)
+        {
+            var b = OpenModal(760);
+            b.Add(L("លទ្ធផលកោះឧបសគ្គ", 32, Gold, false, true)); b.Add(Ornament(360));
+            for (int i = 0; i < rows.Length; i++) { var l = L(rows[i], 21, i == 0 ? Gold : Color.white, i == 0); l.style.alignSelf = Align.FlexStart; l.style.marginLeft = 40; b.Add(l); }
+            var n = L(note, 20, new Color(0.8f, 1f, 0.8f)); n.style.marginTop = 12; n.style.unityTextAlign = TextAnchor.MiddleCenter; b.Add(n);
+            var row = new VisualElement(); row.style.flexDirection = FlexDirection.Row;
+            if (isHost) { var a = B("លេងម្ដងទៀត", () => { CloseModal(); again(); }, 22); a.style.marginRight = 10; row.Add(a); }
+            else row.Add(L("រង់ចាំម្ចាស់បន្ទប់ចាប់ផ្ដើមម្ដងទៀត...", 18, new Color(1, 1, 1, 0.7f)));
+            var lv = B("ចាកចេញ", () => { CloseModal(); leave(); }, 20, new Color(0.25f, 0.25f, 0.28f)); lv.style.marginLeft = 10; row.Add(lv);
+            b.Add(row);
+        }
+
+        public void CoursePause(Action resume, Action leave)
+        {
+            var b = OpenModal(560);
+            b.Add(L("ផ្អាក", 32, Gold, false, true)); b.Add(Ornament(300));
+            b.Add(L("(ពេលលេងអនឡាញ ហ្គេមមិនឈប់ទេ)", 16, new Color(1, 1, 1, 0.6f)));
+            var col = new VisualElement(); col.style.width = 380;
+            col.Add(B("លេងបន្ត", () => { CloseModal(); resume(); }));
+            col.Add(B("ចាកចេញពីកោះ", () => { CloseModal(); leave(); }, 20, new Color(0.25f, 0.25f, 0.28f)));
+            b.Add(col);
+        }
     }
 }

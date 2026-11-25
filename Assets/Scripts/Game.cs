@@ -9,7 +9,7 @@ namespace KhmerHeroes
     public class Game : MonoBehaviour
     {
         public static Game I;
-        enum State { Title, Select, Play, Over, Won }
+        enum State { Title, Select, Play, Over, Won, Course }
         State state;
         bool paused;
 
@@ -34,6 +34,8 @@ namespace KhmerHeroes
         readonly Queue<Quiz> quizQueue = new Queue<Quiz>();
 
         public bool Playing => state == State.Play && !paused && UI.I != null && !UI.I.Busy;
+        public bool CourseInput => state == State.Course && !paused && UI.I != null && !UI.I.Busy;
+        int lobbyHero; string lobbyName = ""; CourseMode lobbyMode = CourseMode.Coop;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -59,14 +61,91 @@ namespace KhmerHeroes
             yield return null;
             Time.timeScale = 1;
             ResetFlags();
+            if (Net.Online) { var t = Net.Shutdown(); }
+            UI.I.CourseHud(false);
+            MakeCamera();
+            World.Build();
+            SpawnContent();
+            ShowTitle();
+        }
+
+        void MakeCamera()
+        {
             var cg = new GameObject("Main Camera") { tag = "MainCamera" };
             cam = cg.AddComponent<Camera>();
             cam.farClipPlane = 600; cam.nearClipPlane = 0.2f; cam.fieldOfView = 60;
             cg.AddComponent<AudioListener>();
             cg.AddComponent<CamRig>();
-            World.Build();
-            SpawnContent();
-            ShowTitle();
+        }
+
+        // ---------------- កោះឧបសគ្គ (លេងច្រើននាក់) ----------------
+        public void OpenCourseLobby()
+        {
+            UI.I.CourseLobby(lobbyHero, lobbyName, lobbyMode, (h, n, m, kind, arg) => StartCourse(h, n, m, kind, arg), ShowTitle);
+        }
+
+        public async void StartCourse(int hero, string pname, CourseMode mode, int kind, string arg)
+        {
+            lobbyHero = hero; lobbyName = pname; lobbyMode = mode;
+            state = State.Course; paused = false;
+            UI.I.ClearScreen();
+            foreach (var g in SceneManager.GetActiveScene().GetRootGameObjects())
+                if (g != gameObject) Destroy(g);
+            await System.Threading.Tasks.Task.Yield();
+            MakeCamera();
+            cam.transform.position = new Vector3(0, 9, -12); cam.transform.LookAt(new Vector3(0, 2, 12));
+            var cm = CourseManager.Build(mode, kind != 0);
+            UI.I.ShowHud(true); UI.I.CourseHud(true); UI.I.Boss(null, 0); UI.I.Prompt("");
+            Sfx.I.Music("race");
+            Net.pendingHero = hero; Net.pendingName = pname; Net.pendingMode = mode;
+            if (kind == 0)
+            {
+                var go = new GameObject("Runner");
+                var r = go.AddComponent<CourseRunner>();
+                r.Init(true, hero, pname, 0);
+                r.Teleport(cm.SpawnPoint(0));
+                cm.HostStart();
+                return;
+            }
+            UI.I.Waiting(kind == 1 || kind == 3 ? "កំពុងបង្កើតបន្ទប់..." : "កំពុងភ្ជាប់ទៅបន្ទប់...");
+            try
+            {
+                if (kind == 1) await Net.HostRelay();
+                else if (kind == 2)
+                {
+                    if (string.IsNullOrWhiteSpace(arg)) throw new System.Exception("សូមបញ្ចូលលេខកូដបន្ទប់");
+                    await Net.JoinRelay(arg);
+                }
+                else if (kind == 3) Net.HostLan();
+                else Net.JoinLan(arg);
+                UI.I.CloseModal();
+                if (kind == 1 || kind == 3)
+                    UI.I.Message("បន្ទប់រួចរាល់!", "ប្រាប់មិត្តភក្ដិឲ្យចូលដោយ" + (kind == 1 ? "លេខកូដ៖ " : "IP៖ ") + Net.JoinCode +
+                                 "\n\n(លេខកូដក៏បង្ហាញនៅខាងលើអេក្រង់ដែរ)\nពេលគ្រប់គ្នាចូលហើយ ចុច Enter ដើម្បីចាប់ផ្ដើម។", "យល់ហើយ", null);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning(e);
+                UI.I.CloseModal();
+                UI.I.Message("ភ្ជាប់មិនបាន", Net.Explain(e), "ត្រឡប់", LeaveCourse);
+            }
+        }
+
+        public async void LeaveCourse()
+        {
+            UI.I.Waiting("កំពុងចាកចេញ...");
+            await Net.Shutdown();
+            UI.I.CloseModal();
+            UI.I.CourseHud(false);
+            UI.I.RaceHud("");
+            paused = false;
+            StartCoroutine(Setup());
+        }
+
+        public void OnNetDisconnected()
+        {
+            if (state != State.Course) return;
+            UI.I.Message("ការតភ្ជាប់បានដាច់", "ម្ចាស់បន្ទប់បានចាកចេញ ឬអ៊ីនធឺណិតដាច់។", "ត្រឡប់", LeaveCourse);
         }
 
         void ResetFlags()
@@ -212,9 +291,11 @@ namespace KhmerHeroes
             });
             gate1 = Gate.Build(new Vector3(0, 0, 262), 5, 46);
             Pickup.Spawn(new Vector3(12, 0, 180), true);
+            StoryLogs.Build(new[] { 192f, 201f, 210f });   // ដុំឈើយោលកាត់ផ្លូវ
             Pickup.Spawn(new Vector3(-10, 0, 255), true);
 
             // ---- តំបន់ ២៖ ភ្នំខ្លា ----
+            StoryBoulders.Build();                          // ដុំថ្មរមៀលចុះពីភ្នំ
             SpawnEnemy(EnemyKind.Archer, new Vector3(-8, 0, 302), 2);
             SpawnEnemy(EnemyKind.Archer, new Vector3(10, 0, 308), 2);
             SpawnEnemy(EnemyKind.Bandit, new Vector3(2, 0, 315), 2);
@@ -370,10 +451,21 @@ namespace KhmerHeroes
             if (UI.I == null || cam == null) return;
             bool modal = UI.I.ModalOpen || UI.I.DialogueOpen;
             Time.timeScale = (state == State.Play && (modal || paused)) ? 0 : 1;
-            bool lockCursor = Playing;
+            bool lockCursor = Playing || CourseInput;
             Cursor.lockState = lockCursor ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !lockCursor;
 
+            if (state == State.Course)
+            {
+                if (InputX.Pause)
+                {
+                    if (paused) { paused = false; UI.I.CloseModal(); }
+                    else if (!UI.I.Busy) { paused = true; UI.I.CoursePause(() => paused = false, LeaveCourse); }
+                }
+                var cmg = CourseManager.I;
+                if (cmg != null && cmg.IsHost && cmg.startAt < 0 && CourseInput && Input.GetKeyDown(KeyCode.Return)) cmg.HostStart();
+                return;
+            }
             if (state == State.Title)
             {
                 float a = Time.time * 0.05f;

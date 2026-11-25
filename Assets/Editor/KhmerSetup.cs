@@ -23,6 +23,10 @@ namespace KhmerHeroes.EditorTools
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             PlayerSettings.companyName = "Deokairos";
             PlayerSettings.productName = "វីរជនខ្មែរ";
+            PlayerSettings.runInBackground = true;                 // លេងអនឡាញ៖ កុំឈប់ពេលបង្អួចមិនផ្ដោត
+            PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
+            PlayerSettings.defaultScreenWidth = 1280; PlayerSettings.defaultScreenHeight = 720;
+            PlayerSettings.resizableWindow = true;
 
             if (!System.IO.File.Exists(ScenePath))
             {
@@ -45,6 +49,48 @@ namespace KhmerHeroes.EditorTools
                            "Hidden/TerrainEngine/Details/WavingDoublePass", "Hidden/TerrainEngine/Details/BillboardWavingDoublePass",
                            "Hidden/TerrainEngine/Splatmap/Standard-AddPass", "Hidden/TerrainEngine/Splatmap/Standard-Base", "Hidden/TerrainEngine/Splatmap/Diffuse-AddPass", "Hidden/TerrainEngine/Splatmap/Diffuse-Base", "Diffuse");
             EnsureLegacyInput();
+            BuildNetPrefab();
+        }
+
+        [MenuItem("KhmerHeroes/Build Windows (.exe)")]
+        public static void BuildWindows()
+        {
+            Run();
+            var opts = new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = "Builds/Windows/KhmerHeroes.exe",
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None,
+            };
+            var rep = BuildPipeline.BuildPlayer(opts);
+            Debug.Log("[វីរជនខ្មែរ] Build: " + rep.summary.result + " → " + opts.locationPathName);
+            if (rep.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) EditorUtility.RevealInFinder(opts.locationPathName);
+        }
+
+        const string NetPrefabPath = "Assets/Resources/NetPlayer.prefab";
+
+        /// <summary>បង្កើត prefab សម្រាប់អ្នកលេងតាមអ៊ីនធឺណិត (NetworkObject + NetworkTransform + NetPlayer)</summary>
+        static void BuildNetPrefab()
+        {
+            if (System.IO.File.Exists(NetPrefabPath))
+            {
+                var existing = AssetDatabase.LoadAssetAtPath<GameObject>(NetPrefabPath);
+                if (existing != null && existing.GetComponent<KhmerHeroes.NetPlayer>() != null) return;
+                AssetDatabase.DeleteAsset(NetPrefabPath);
+            }
+            var go = new GameObject("NetPlayer");
+            go.AddComponent<Unity.Netcode.NetworkObject>();
+            var nt = go.AddComponent<Unity.Netcode.Components.NetworkTransform>();
+            nt.AuthorityMode = Unity.Netcode.Components.NetworkTransform.AuthorityModes.Owner;
+            nt.SyncRotAngleX = false; nt.SyncRotAngleZ = false;
+            nt.SyncScaleX = false; nt.SyncScaleY = false; nt.SyncScaleZ = false;
+            go.AddComponent<KhmerHeroes.NetPlayer>();
+            System.IO.Directory.CreateDirectory("Assets/Resources");
+            PrefabUtility.SaveAsPrefabAsset(go, NetPrefabPath);
+            Object.DestroyImmediate(go);
+            AssetDatabase.Refresh();
+            Debug.Log("[វីរជនខ្មែរ] បានបង្កើត " + NetPrefabPath);
         }
 
         static void IncludeShaders(params string[] names)
