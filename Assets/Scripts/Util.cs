@@ -26,6 +26,7 @@ namespace KhmerHeroes
         public static bool Jump => Input.GetKeyDown(KeyCode.Space);
         public static bool Interact => Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.E);
         public static bool Pause => Input.GetKeyDown(KeyCode.Escape);
+        public static bool Dismount => Input.GetKeyDown(KeyCode.R);
         public static bool Next => Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.F) || Input.GetMouseButtonDown(0);
         public static int HeroKey()
         {
@@ -338,9 +339,21 @@ namespace KhmerHeroes
             clips["gate"] = Tone(1.0f, 90, 70, 0.6f, true);
             clips["skill"] = Chord(0.5f, new[] { 392f, 587f, 784f }, 0.35f);
             clips["step"] = Tone(0.06f, 0, 0, 0.12f, true, true);
+            // សំឡេងសត្វកំប្លែងៗ
+            clips["meow"] = Sweep(0.55f, new[] { 520f, 900f, 700f, 450f }, 0.5f, 6f, 0.25f, 0.2f);
+            clips["bark"] = Concat(Sweep(0.13f, new[] { 420f, 620f, 300f }, 0.6f, 0, 0.6f, 0.5f), Silence(0.07f), Sweep(0.13f, new[] { 440f, 640f, 320f }, 0.6f, 0, 0.6f, 0.5f));
+            clips["trumpet"] = Sweep(0.9f, new[] { 260f, 520f, 620f, 480f }, 0.45f, 9f, 0.35f, 0.9f);
+            clips["neigh"] = Sweep(0.8f, new[] { 900f, 1100f, 700f, 500f }, 0.4f, 18f, 0.2f, 0.4f);
+            clips["moo"] = Sweep(1.0f, new[] { 140f, 160f, 120f }, 0.6f, 3f, 0.1f, 0.8f);
+            clips["boing"] = Sweep(0.35f, new[] { 180f, 520f, 260f }, 0.4f, 25f, 0f, 0f);
+            clips["slip"] = Sweep(0.6f, new[] { 1200f, 300f, 900f, 200f }, 0.4f, 12f, 0.1f, 0f);
+            clips["count"] = Chord(0.35f, new[] { 660f }, 0.5f);
+            clips["go"] = Chord(0.8f, new[] { 523f, 784f, 1046f }, 0.45f);
+            clips["cheer"] = Concat(Chord(0.3f, new[] { 523f, 659f }, 0.35f), Chord(0.3f, new[] { 587f, 740f }, 0.35f), Chord(0.8f, new[] { 659f, 784f, 1046f }, 0.4f));
             clips["mus_field"] = KhmerTune(96, 0);
             clips["mus_battle"] = KhmerTune(132, 1);
             clips["mus_title"] = KhmerTune(80, 2);
+            clips["mus_race"] = KhmerTune(150, 3);
         }
 
         void Update()
@@ -408,6 +421,43 @@ namespace KhmerHeroes
             return c;
         }
 
+        /// <summary>សំឡេងរអ៊ូ/ស្រែក៖ ប្ដូរកម្ពស់សំឡេងតាមចំណុច + រំញ័រ + harmonic</summary>
+        static AudioClip Sweep(float dur, float[] pts, float vol, float vibrato, float noise, float harm)
+        {
+            int n = (int)(SR * dur);
+            var d = new float[n];
+            var rnd = new System.Random(5);
+            float ph = 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)n;
+                float fi = t * (pts.Length - 1);
+                int k = Mathf.Min(pts.Length - 2, (int)fi);
+                float f = Mathf.Lerp(pts[k], pts[k + 1], Mathf.SmoothStep(0, 1, fi - k));
+                f *= 1 + Mathf.Sin(i / (float)SR * vibrato * 6.283f) * 0.04f;
+                ph += 6.283f * f / SR;
+                float sgl = Mathf.Sin(ph) + harm * 0.5f * Mathf.Sin(ph * 2) + harm * 0.3f * Mathf.Sin(ph * 3);
+                sgl += ((float)rnd.NextDouble() * 2 - 1) * noise;
+                float env = Mathf.Min(1, i / (SR * 0.02f)) * Mathf.Min(1, (n - i) / (SR * 0.08f));
+                d[i] = sgl * env * vol * 0.6f;
+            }
+            var c = AudioClip.Create("sweep", n, 1, SR, false);
+            c.SetData(d, 0);
+            return c;
+        }
+
+        static AudioClip Silence(float dur) { int n = (int)(SR * dur); var c = AudioClip.Create("sil", n, 1, SR, false); c.SetData(new float[n], 0); return c; }
+
+        static AudioClip Concat(params AudioClip[] parts)
+        {
+            int total = 0; foreach (var p in parts) total += p.samples;
+            var d = new float[total]; int o = 0;
+            foreach (var p in parts) { var b = new float[p.samples]; p.GetData(b, 0); b.CopyTo(d, o); o += b.Length; }
+            var c = AudioClip.Create("concat", total, 1, SR, false);
+            c.SetData(d, 0);
+            return c;
+        }
+
         /// <summary>ភ្លេងបែបខ្មែរ៖ រនាត (pentatonic) + ស្គរ + ឈិង — រង្វិលជុំ</summary>
         static AudioClip KhmerTune(float bpm, int variant)
         {
@@ -441,7 +491,7 @@ namespace KhmerHeroes
                     }
                 }
                 // ស្គរ (ស្គរសំភោ)៖ ចង្វាក់ ១ និង ៣ + ចង្វាក់រំលង
-                bool drum = st % 4 == 0 || (variant == 1 && st % 8 == 6) || (variant == 0 && st % 16 == 11);
+                bool drum = st % 4 == 0 || (variant == 1 && st % 8 == 6) || (variant == 0 && st % 16 == 11) || (variant == 3 && st % 2 == 0);
                 if (drum)
                 {
                     int len = (int)(SR * 0.3f);

@@ -401,13 +401,18 @@ namespace KhmerHeroes
         {
             float[,] houses = { { -20, 22, 90 }, { 22, 30, -90 }, { -24, 52, 80 }, { 21, 62, -95 }, { -19, 86, 95 }, { 24, 96, -85 }, { -30, 112, 70 } };
             for (int i = 0; i < houses.GetLength(0); i++) StiltHouse(houses[i, 0], houses[i, 1], houses[i, 2]);
-            OxCart(9, 40, 20); OxCart(-10, 100, -160);
+            OxCart(-10, 44, 20); OxCart(-10, 100, -160);
             HayStack(30, 45); HayStack(-31, 70); HayStack(33, 78);
-            Fence(new Vector3(-12, 0, 14), new Vector3(-12, 0, 40)); Fence(new Vector3(12, 0, 70), new Vector3(12, 0, 105));
+            Fence(new Vector3(-12, 0, 14), new Vector3(-12, 0, 40)); Fence(new Vector3(-13, 0, 72), new Vector3(-13, 0, 104));
+            // ក្រោលសត្វជំនិះ
+            Fence(new Vector3(-30, 0, 0.5f), new Vector3(-10, 0, 0.5f)); Fence(new Vector3(10, 0, 0.5f), new Vector3(30, 0, 0.5f));
+            HayStack(-32, 6); HayStack(32, 6);
             for (int i = 0; i < 26; i++)
             {
                 float x = (i % 2 == 0 ? -1 : 1) * R(8, 36), z = R(0, 122);
                 if (Near(x, z, houses, 7)) continue;
+                if (x > 5 && x < 19 && z < 118) continue; // ផ្លូវប្រណាំង
+                if (z < 10) continue;                      // ក្រោលសត្វ
                 SugarPalm(x, z);
             }
             // អណ្ដូងទឹក

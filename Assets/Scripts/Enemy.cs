@@ -17,6 +17,7 @@ namespace KhmerHeroes
         HumanRig hRig; BeastRig bRig; Flash flash; HpBar bar;
         float atkReady, stunT, wanderT, hitAt = -1, specialReady, chargeT = -1, deadT = -1;
         Vector3 chargeDir, knockVel;
+        float airT = -1;
         bool alerted, enraged, summoned;
         Terrain terrain;
 
@@ -182,8 +183,17 @@ namespace KhmerHeroes
             float gh = World.Height(next);
             float cur = World.Height(transform.position);
             bool blocked = (kind != EnemyKind.Croc && gh < World.WaterY + 0.2f) || gh - cur > 1.2f * Mathf.Max(0.2f, (move * dt).magnitude) + 0.4f || World.Blocked(next);
-            if (!blocked) transform.position = new Vector3(next.x, gh, next.z);
-            else { transform.position = new Vector3(transform.position.x, cur, transform.position.z); if (chargeT >= 0) chargeT = -1; }
+            // ហោះឡើងលើពេលត្រូវសត្វជំនិះបុក (កំប្លែង)
+            float air = 0;
+            if (airT >= 0)
+            {
+                airT += dt / 0.9f;
+                air = Mathf.Sin(Mathf.Clamp01(airT) * Mathf.PI) * 2.6f;
+                transform.Rotate(0, 900 * dt, 0);
+                if (airT >= 1) airT = -1;
+            }
+            if (!blocked) transform.position = new Vector3(next.x, gh + air, next.z);
+            else { transform.position = new Vector3(transform.position.x, cur + air, transform.position.z); if (chargeT >= 0) chargeT = -1; }
             var flat = move; flat.y = 0;
             SetAnim(blocked ? 0 : flat.magnitude);
         }
@@ -267,6 +277,7 @@ namespace KhmerHeroes
             float resist = kind == EnemyKind.Chief ? 0.3f : kind == EnemyKind.Croc ? 0.4f : 1f;
             if (dir.sqrMagnitude > 0.001f) knockVel = dir.normalized * knock * resist * 1.6f;
             if (stun > 0) { stunT = stun * resist; hitAt = -1; chargeT = -1; }
+            if (knock >= 10 && kind != EnemyKind.Chief && airT < 0) { airT = 0; stunT = Mathf.Max(stunT, 1f); }
             if (hRig != null) hRig.Hurt();
             UI.I.DamageNumber(Center + Vector3.up * 0.6f, Mathf.RoundToInt(d));
             if (hp <= 0) Die();

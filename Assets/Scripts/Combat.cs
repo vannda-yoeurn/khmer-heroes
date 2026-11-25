@@ -139,8 +139,9 @@ namespace KhmerHeroes
                 dist = Mathf.Clamp(dist - Input.mouseScrollDelta.y * 0.6f, 3f, 11f);
             }
             var rot = Quaternion.Euler(pitch, yaw, 0);
-            var pivot = target.position + Vector3.up * 1.6f;
-            var want = pivot - rot * Vector3.forward * dist + rot * Vector3.right * 0.5f;
+            float seat = Player.I != null && Player.I.Riding ? Player.I.mount.rig.seatY : 0;
+            var pivot = target.position + Vector3.up * (1.6f + seat * 0.9f);
+            var want = pivot - rot * Vector3.forward * (dist + seat * 1.2f) + rot * Vector3.right * 0.5f;
             var dir = want - pivot;
             float d = dir.magnitude;
             if (Physics.SphereCast(pivot, 0.3f, dir.normalized, out var hit, d, ~0, QueryTriggerInteraction.Ignore) && hit.collider.GetComponentInParent<Actor>() == null)

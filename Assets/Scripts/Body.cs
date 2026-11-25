@@ -90,7 +90,7 @@ namespace KhmerHeroes
         public Transform model, hips, torso, head, armL, armR, foreL, foreR, legL, legR, shinL, shinR, handL, handR;
         public Weapon weapon;
         public float moveSpeed, refSpeed = 6f;
-        public bool grounded = true, dead;
+        public bool grounded = true, dead, sitting;
         float phase, atkT = -1, atkDur = 0.4f, hurtT = -1, rollT = -1, rollDur = 0.5f, spinT = -1, deadT;
         int atkKind;
         float modelBaseY;
@@ -325,6 +325,19 @@ namespace KhmerHeroes
                         break;
                 }
                 if (atkT >= 1) atkT = -1;
+            }
+
+            // អង្គុយលើសត្វជំនិះ
+            if (sitting)
+            {
+                lL = XYZ(-80, 0, -24); lR = XYZ(-80, 0, 24); kL = kR = X(85);
+                if (atkT < 0)
+                {
+                    if (weapon == Weapon.Bow) { aR = XYZ(-45, 0, 12); fR = X(-45); }
+                    else { aL = XYZ(-45, 0, -12); aR = XYZ(-45, 0, 12); fL = fR = X(-45); }
+                    tor = X(8);
+                }
+                bob = 0;
             }
 
             // គេច (ក្រឡាប់)

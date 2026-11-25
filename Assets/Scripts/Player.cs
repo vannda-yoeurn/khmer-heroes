@@ -24,6 +24,13 @@ namespace KhmerHeroes
         struct Pending { public float t; public Action act; }
         readonly List<Pending> pending = new List<Pending>();
         float stepT;
+        // ---------- សត្វជំនិះ ----------
+        public Mount mount;
+        public bool frozen;
+        float boostUntil, mudUntil, slipT = -1, ramClear;
+        readonly HashSet<Actor> ramSkip = new HashSet<Actor>();
+        public bool Riding => mount != null;
+        public float SpeedNow { get; private set; }
 
         public HeroDef Def => defs[active];
         public HumanRig Rig => rigs[active];
@@ -90,14 +97,25 @@ namespace KhmerHeroes
             if (!Alive) return;
             invuln -= dt;
 
-            var mv = InputX.Move();
+            bool riding = mount != null;
+            var mv = frozen ? Vector2.zero : InputX.Move();
             var cam = CamRig.I;
             Vector3 wish = cam.Forward * mv.y + cam.Right * mv.x;
             bool attacking = Rig.Busy;
-            float spd = Def.speed * (attacking ? (Def.weapon == Weapon.Bow ? 0.55f : 0.35f) : 1f);
+            float spd = riding ? mount.def.speed * (attacking ? 0.8f : 1f) : Def.speed * (attacking ? (Def.weapon == Weapon.Bow ? 0.55f : 0.35f) : 1f);
+            if (Time.time < boostUntil) spd *= 1.6f;
+            if (Time.time < mudUntil) spd *= 0.45f;
             Vector3 horiz;
 
-            if (rollT >= 0)
+            if (slipT >= 0)
+            {
+                // រអិលសំបកចេក៖ វិលជុំ
+                slipT += dt / 0.9f;
+                horiz = transform.forward * spd * 0.35f * (1 - slipT);
+                transform.Rotate(0, 1000 * dt, 0);
+                if (slipT >= 1) slipT = -1;
+            }
+            else if (rollT >= 0)
             {
                 rollT += dt / 0.45f;
                 horiz = rollDir * 11f * (1 - rollT * 0.5f);
@@ -121,18 +139,32 @@ namespace KhmerHeroes
 
             bool grounded = cc.isGrounded;
             if (grounded && vy < 0) vy = -2f;
-            if (InputX.Jump && grounded && rollT < 0 && dashT < 0) vy = 7f;
+            if (InputX.Jump && !frozen && grounded && rollT < 0 && dashT < 0)
+            {
+                vy = riding ? mount.def.jump : 7f;
+                if (riding) { Sfx.I?.Play("boing", 0.6f); if (mount.def.kind == MountKind.Cat) mount.Voice(0.6f); }
+            }
             vy -= 22f * dt;
             cc.Move((horiz + Vector3.up * vy) * dt);
             var flat = horiz; flat.y = 0;
-            Rig.moveSpeed = rollT >= 0 || dashT >= 0 ? 0 : flat.magnitude;
+            SpeedNow = flat.magnitude;
+            Rig.moveSpeed = riding || rollT >= 0 || dashT >= 0 ? 0 : flat.magnitude;
+            if (riding) { mount.rig.moveSpeed = flat.magnitude; mount.rig.refSpeed = mount.def.speed; }
             Rig.grounded = grounded || vy > -3f && vy < 0;
+            if (riding) RamUpdate(flat);
+            if (frozen) return;
             if (grounded && flat.magnitude > 1f) { stepT -= dt * flat.magnitude; if (stepT <= 0) { stepT = 2.2f; Sfx.I?.Play("step", 0.5f); } }
 
             // ---------- វាយ ----------
             if (InputX.Attack && Time.time >= atkReady && rollT < 0 && dashT < 0) DoAttack();
             if (InputX.Skill && Time.time >= skillReady[active] && rollT < 0 && dashT < 0) DoSkill();
-            if (InputX.Dodge && Time.time >= dodgeReady && rollT < 0 && dashT < 0)
+            if (riding && InputX.Dodge && Time.time >= dodgeReady)
+            {
+                boostUntil = Time.time + 1.2f; dodgeReady = Time.time + 3f;
+                mount.Voice(0.8f);
+                UI.I.FloatText(transform.position + Vector3.up * (mount.rig.seatY + 1.5f), "ស្ទុះ!", UI.Gold);
+            }
+            else if (InputX.Dodge && Time.time >= dodgeReady && rollT < 0 && dashT < 0)
             {
                 rollT = 0; dodgeReady = Time.time + 0.8f; invuln = 0.45f;
                 rollDir = wish.sqrMagnitude > 0.01f ? wish.normalized : transform.forward;
@@ -145,6 +177,7 @@ namespace KhmerHeroes
             var it = Interactable.Nearest(transform.position, 3.3f);
             UI.I.Prompt(it != null ? "[F] " + it.Prompt : "");
             if (InputX.Interact && it != null) it.Use(this);
+            if (riding && InputX.Dismount) Dismount();
 
             int hk = InputX.HeroKey();
             if (hk >= 0 && hk != active && Time.time >= switchReady)
@@ -259,6 +292,7 @@ namespace KhmerHeroes
             active = k;
             bodies[k].SetActive(true);
             Rig.dead = false;
+            PoseBody(k);
             switchReady = Time.time + 0.8f; invuln = 0.6f; downTimer = -1; rollT = -1; dashT = -1;
             Combat.Ring(transform.position, 2f, new Color(0.6f, 0.9f, 1f));
             Sfx.I?.Play("pick");
@@ -270,8 +304,9 @@ namespace KhmerHeroes
             if (invuln > 0 || rollT >= 0 || dashT >= 0 || !Alive) return;
             var d = transform.position - from; d.y = 0;
             if (d.sqrMagnitude > 0.001f) knockVel = d.normalized * knock * 1.5f;
-            Hurt(dmg, false);
+            Hurt(riding_ ? dmg * 0.75f : dmg, false);
         }
+        bool riding_ => mount != null;
 
         void Hurt(float dmg, bool silent)
         {
@@ -302,6 +337,79 @@ namespace KhmerHeroes
             for (int i = 0; i < hp.Length; i++) hp[i] = Mathf.Max(hp[i], defs[i].hp * frac);
             Rig.dead = false; downTimer = -1;
         }
+
+        // ---------- ជិះ / ចុះ ----------
+        void PoseBody(int i)
+        {
+            bool r = mount != null;
+            bodies[i].transform.localPosition = r ? new Vector3(0, mount.rig.seatY + 0.1f - 0.95f, -0.1f) : Vector3.zero;
+            rigs[i].sitting = r;
+        }
+
+        void SetController()
+        {
+            bool r = mount != null;
+            cc.enabled = false;
+            cc.radius = r ? mount.def.radius : 0.4f;
+            cc.height = r ? mount.rig.seatY + 1.4f : 1.8f;
+            cc.center = new Vector3(0, cc.height / 2 + 0.02f, 0);
+            cc.stepOffset = r ? Mathf.Min(0.7f, cc.height * 0.3f) : 0.45f;
+            cc.enabled = true;
+        }
+
+        public void Ride(Mount m)
+        {
+            if (m == null || m.ridden) return;
+            if (mount != null) Dismount();
+            mount = m;
+            var at = m.transform.position;
+            m.SetRidden(true);
+            m.transform.SetParent(transform, false);
+            m.transform.localPosition = Vector3.zero; m.transform.localRotation = Quaternion.identity;
+            Teleport(at + Vector3.up * 0.1f);
+            SetController();
+            for (int i = 0; i < bodies.Length; i++) PoseBody(i);
+            m.Voice(0.9f);
+            UI.I.Toast("ជិះ" + m.def.name + "ហើយ! · R = ចុះ · Shift = ស្ទុះ · Space = លោត", 3f);
+        }
+
+        public void Dismount()
+        {
+            if (mount == null) return;
+            var m = mount; mount = null;
+            m.transform.SetParent(null, true);
+            var p = transform.position;
+            m.transform.position = World.Ground(p);
+            m.SetRidden(false);
+            SetController();
+            for (int i = 0; i < bodies.Length; i++) PoseBody(i);
+            Teleport(World.Ground(p + transform.right * (m.def.radius + 1.3f)) + Vector3.up * 0.1f);
+        }
+
+        void RamUpdate(Vector3 flat)
+        {
+            if (Time.time > ramClear) { ramSkip.Clear(); ramClear = Time.time + 0.8f; }
+            if (flat.magnitude < 5f) return;
+            var fwd = flat.normalized;
+            var origin = transform.position + fwd * mount.rig.length * 0.35f;
+            int n = Combat.Hit(origin, fwd, mount.def.radius + 1f, 150, mount.def.ram * (Time.time < boostUntil ? 1.5f : 1f), true, 12f, 0.8f, ramSkip);
+            if (n > 0)
+            {
+                Sfx.I?.Play("hit"); CamRig.I.Shake(0.4f);
+                UI.I.FloatText(origin + Vector3.up * 2.2f, "បុក!", new Color(1f, 0.55f, 0.3f));
+                if (UnityEngine.Random.value < 0.5f) mount.Voice(0.7f);
+            }
+        }
+
+        public void Slip()
+        {
+            if (slipT >= 0) return;
+            slipT = 0;
+            Sfx.I?.Play("slip");
+            if (mount != null) mount.Voice(0.7f);
+        }
+        public void InMud() { mudUntil = Time.time + 0.15f; }
+        public void Boost(float sec) { boostUntil = Time.time + sec; Sfx.I?.Play("skill", 0.6f); }
 
         public void Teleport(Vector3 p)
         {

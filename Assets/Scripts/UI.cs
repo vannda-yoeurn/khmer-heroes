@@ -18,6 +18,8 @@ namespace KhmerHeroes
         public static readonly Color Red = new Color(0.62f, 0.12f, 0.12f);
 
         VisualElement hud, screen, dlg, modal, modalBox, toastBox, numLayer, fade, bossBox, bossFill, crosshair;
+        Label bigL, raceL, mountL;
+        float bigUntil;
         Label heroName, heroHp, skillL, coinsL, zoneL, objL, promptL, bossName, dlgWho, dlgText, dlgHint;
         VisualElement hpFill;
         readonly Label[] partyL = new Label[4]; readonly VisualElement[] partyFill = new VisualElement[4]; readonly VisualElement[] partyRow = new VisualElement[4];
@@ -28,7 +30,7 @@ namespace KhmerHeroes
         public bool ScreenOpen => screen.childCount > 0;
         public bool Busy => DialogueOpen || ModalOpen || ScreenOpen;
 
-        struct Num { public Label l; public Vector3 p; public float t; }
+        struct Num { public Label l; public Vector3 p; public float t; public float life; }
         readonly List<Num> nums = new List<Num>();
 
         void Awake()
@@ -177,6 +179,7 @@ namespace KhmerHeroes
             row.Add(Bar(new Color(0.85f, 0.2f, 0.22f), out hpFill, 300, 20)); heroHp = L("", 16); heroHp.style.marginLeft = 10; row.Add(heroHp);
             tl.Add(row);
             skillL = L("", 16, new Color(0.7f, 0.9f, 1f)); skillL.style.marginTop = 6; tl.Add(skillL);
+            mountL = L("", 16, new Color(1f, 0.85f, 0.6f)); tl.Add(mountL);
             var sep = new VisualElement(); sep.style.height = 1; sep.style.backgroundColor = new Color(1, 1, 1, 0.2f); sep.style.marginTop = 6; sep.style.marginBottom = 6; tl.Add(sep);
             for (int i = 0; i < 4; i++)
             {
@@ -193,6 +196,10 @@ namespace KhmerHeroes
             objL = L("", 17); tr.Add(objL);
             hud.Add(tr);
 
+            raceL = L("", 22, Color.white, true); raceL.style.position = Position.Absolute; raceL.style.top = 50; raceL.style.left = 0; raceL.style.right = 0;
+            raceL.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(raceL); hud.Add(raceL);
+            bigL = L("", 110, Gold, false, true); bigL.style.position = Position.Absolute; bigL.style.top = Length.Percent(28); bigL.style.left = 0; bigL.style.right = 0;
+            bigL.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(bigL); hud.Add(bigL);
             coinsL = L("", 20, Gold, true); coinsL.style.position = Position.Absolute; coinsL.style.top = 18; coinsL.style.left = 0; coinsL.style.right = 0;
             coinsL.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(coinsL); hud.Add(coinsL);
 
@@ -217,7 +224,11 @@ namespace KhmerHeroes
             bossBox.style.display = DisplayStyle.Flex; bossName.text = name; bossFill.style.width = Length.Percent(Mathf.Clamp01(frac) * 100);
         }
         public void Prompt(string t) { if (promptL.text != t) promptL.text = t ?? ""; }
-        void LateUpdate() { promptL.style.display = Busy ? DisplayStyle.None : DisplayStyle.Flex; }
+        void LateUpdate()
+        {
+            promptL.style.display = Busy ? DisplayStyle.None : DisplayStyle.Flex;
+            if (bigL != null && bigUntil > 0 && Time.unscaledTime > bigUntil) { bigL.style.display = DisplayStyle.None; bigUntil = 0; }
+        }
 
         public void Toast(string text, float seconds = 2.6f)
         {
@@ -232,7 +243,35 @@ namespace KhmerHeroes
         {
             var l = L(Kh.Num(n), 24, new Color(1f, 0.9f, 0.5f), true); l.style.position = Position.Absolute; Shadow(l);
             numLayer.Add(l);
-            nums.Add(new Num { l = l, p = at + UnityEngine.Random.insideUnitSphere * 0.3f, t = 0 });
+            nums.Add(new Num { l = l, p = at + UnityEngine.Random.insideUnitSphere * 0.3f, t = 0, life = 0.9f });
+        }
+
+        /// <summary>អក្សរអណ្ដែតលើក្បាល (ឧ. «បុក!» «រអិល!»)</summary>
+        public void FloatText(Vector3 at, string text, Color c)
+        {
+            var l = L(text, 30, c, false, true); l.style.position = Position.Absolute; Shadow(l);
+            numLayer.Add(l);
+            nums.Add(new Num { l = l, p = at, t = 0, life = 1.4f });
+        }
+
+        /// <summary>អក្សរធំកណ្ដាលអេក្រង់ (រាប់ថយក្រោយ)</summary>
+        public void Big(string text, float seconds, Color? c = null)
+        {
+            bigL.text = text; bigL.style.color = c ?? Gold; bigUntil = Time.unscaledTime + seconds;
+            bigL.style.display = DisplayStyle.Flex;
+        }
+        public void RaceHud(string text) { if (raceL.text != (text ?? "")) raceL.text = text ?? ""; }
+
+        public void RaceResults(string[] rows, string note, Action close)
+        {
+            var b = OpenModal(700);
+            b.Add(L("លទ្ធផលការប្រណាំង", 32, Gold, false, true)); b.Add(Ornament(360));
+            for (int i = 0; i < rows.Length; i++)
+            {
+                var l = L(rows[i], 22, i == 0 ? Gold : Color.white, i == 0); l.style.alignSelf = Align.FlexStart; l.style.marginLeft = 60; b.Add(l);
+            }
+            var n = L(note, 20, new Color(0.8f, 1f, 0.8f)); n.style.marginTop = 12; n.style.unityTextAlign = TextAnchor.MiddleCenter; b.Add(n);
+            b.Add(B("អស្ចារ្យ!", () => { CloseModal(); close?.Invoke(); }, 24));
         }
 
         void Update()
@@ -241,13 +280,13 @@ namespace KhmerHeroes
             for (int i = nums.Count - 1; i >= 0; i--)
             {
                 var n = nums[i]; n.t += Time.deltaTime; nums[i] = n;
-                if (n.t > 0.9f || cam == null) { n.l.RemoveFromHierarchy(); nums.RemoveAt(i); continue; }
+                if (n.t > n.life || cam == null) { n.l.RemoveFromHierarchy(); nums.RemoveAt(i); continue; }
                 var wp = n.p + Vector3.up * n.t * 1.2f;
                 var vp = cam.WorldToViewportPoint(wp);
                 if (vp.z < 0) { n.l.style.display = DisplayStyle.None; continue; }
                 var pp = RuntimePanelUtils.CameraTransformWorldToPanel(root.panel, wp, cam);
                 n.l.style.display = DisplayStyle.Flex;
-                n.l.style.left = pp.x - 15; n.l.style.top = pp.y - 15; n.l.style.opacity = 1 - n.t / 0.9f;
+                n.l.style.left = pp.x - 15; n.l.style.top = pp.y - 15; n.l.style.opacity = 1 - n.t / n.life;
             }
 
             var p = Player.I;
@@ -269,6 +308,8 @@ namespace KhmerHeroes
                     partyRow[i].style.opacity = i == p.active ? 1f : 0.8f;
                 }
                 coinsL.text = "កាក់មាស  " + Kh.Num(p.coins);
+                mountL.text = p.Riding ? "ជិះ៖ " + p.mount.def.name + "  ·  R ចុះ  ·  Shift ស្ទុះ" : "";
+                mountL.style.display = p.Riding ? DisplayStyle.Flex : DisplayStyle.None;
                 crosshair.style.display = d.weapon == Weapon.Bow ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
@@ -359,7 +400,8 @@ namespace KhmerHeroes
                 "កណ្ដុរឆ្វេង ឬ J — វាយ (ចុចជាប់ៗ ដើម្បីវាយជាប់គ្នា)",
                 "កណ្ដុរស្ដាំ ឬ Q — ក្បាច់ពិសេសរបស់វីរជនម្នាក់ៗ",
                 "Shift — ក្រឡាប់គេច (មិនរងរបួសពេលកំពុងគេច)  ·  Space — លោត",
-                "F — និយាយ ប្រើ រុញថ្ម អុជចន្លុះ ទាញដងទាញ",
+                "F — និយាយ ប្រើ រុញថ្ម អុជចន្លុះ ទាញដងទាញ ឬជិះសត្វ",
+                "ពេលជិះសត្វ៖ Shift — ស្ទុះលឿន · Space — លោត · R — ចុះ · រត់បុកសត្រូវឲ្យហោះ!",
                 "១ ២ ៣ ៤ — ប្ដូរវីរជន។ វីរជនដែលសម្រាក នឹងបានឈាមមកវិញបន្តិចម្ដងៗ",
                 "ទឹកដូង — បន្ថែមឈាមឲ្យគ្រប់គ្នា និងជួយអ្នកដែលសន្លប់ឲ្យភ្ញាក់វិញ",
                 "ពេលសត្រូវភ្លឺពណ៌លឿង វាហៀបនឹងវាយ — ត្រូវគេច!",
@@ -423,7 +465,7 @@ namespace KhmerHeroes
             var t = L(Data.Title, 86, Gold, false, true); t.style.unityTextAlign = TextAnchor.MiddleCenter; Shadow(t); s.Add(t);
             s.Add(Ornament(520));
             var st = L(Data.Subtitle, 34, Color.white, true); Shadow(st); s.Add(st);
-            var sub = L("ហ្គេមផ្សងព្រេង · ប្រយុទ្ធ · ដោះប្រស្នា · ចំណេះដឹងទូទៅ", 18, new Color(1, 1, 1, 0.8f)); sub.style.marginBottom = 30; Shadow(sub); s.Add(sub);
+            var sub = L("ហ្គេមផ្សងព្រេង · ប្រយុទ្ធ · ដោះប្រស្នា · ចំណេះដឹងទូទៅ · ប្រណាំងសត្វ", 18, new Color(1, 1, 1, 0.8f)); sub.style.marginBottom = 30; Shadow(sub); s.Add(sub);
             var col = new VisualElement(); col.style.width = 360;
             col.Add(B("ចាប់ផ្ដើមដំណើរ", start, 26));
             col.Add(B("របៀបលេង", () => Help(null), 22, new Color(0.16f, 0.22f, 0.38f)));

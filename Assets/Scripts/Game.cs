@@ -180,6 +180,21 @@ namespace KhmerHeroes
             };
             guard.marker = () => talkedElder && !gate0.open;
             gate0 = Gate.Build(new Vector3(0, 0, 126), 5, 46);
+
+            // ---- សត្វជំនិះ និងការប្រណាំង ----
+            Mount.Spawn(MountKind.Horse, new Vector3(-14, 0, 4), 10);
+            Mount.Spawn(MountKind.Elephant, new Vector3(-21, 0, 4.5f), 5);
+            Mount.Spawn(MountKind.Buffalo, new Vector3(-28, 0, 4), 15);
+            Mount.Spawn(MountKind.Cat, new Vector3(14, 0, 4), -10);
+            Mount.Spawn(MountKind.Dog, new Vector3(20, 0, 4), -5);
+            Mount.Spawn(MountKind.Tiger, new Vector3(26, 0, 4), -15);
+            RaceManager.Build();
+            var racerSt = Villager(new Color(0.9f, 0.75f, 0.2f), new Color(0.6f, 0.1f, 0.1f), false);
+            racerSt.hair = new Color(0.06f, 0.05f, 0.05f); racerSt.headband = true;
+            var chan = Npc.Spawn("ពូចាន់", new Vector3(-6, 0, 17), 90, racerSt);
+            chan.lines = () => RaceManager.I.Racing ? null : Data.RaceIntro;
+            chan.after = () => RaceManager.I.Begin();
+            chan.marker = () => !RaceManager.I.Racing;
             Pickup.Spawn(new Vector3(-8, 0, 75), true);
 
             // ---- តំបន់ ១៖ វាលស្រែ និងព្រៃឫស្សី ----
@@ -412,7 +427,7 @@ namespace KhmerHeroes
                 bool fight = campStarted && !chiefDead;
                 foreach (var a in Actor.All)
                     if (a != null && a.isEnemy && a.Alive && Vector3.Distance(a.transform.position, player.transform.position) < 16) { fight = true; break; }
-                Sfx.I.Music(fight ? "battle" : "field");
+                Sfx.I.Music(RaceManager.I != null && RaceManager.I.Racing ? "race" : fight ? "battle" : "field");
             }
 
             UI.I.Objective(Data.ZoneNames[zone], ObjectiveText(zone));
@@ -423,9 +438,12 @@ namespace KhmerHeroes
             switch (zone)
             {
                 case 0:
-                    if (!talkedElder) return "• ជួបតាមាស ចាស់ភូមិ នៅកណ្ដាលភូមិ";
-                    if (!gate0.open) return "• ឆ្លើយសំណួររបស់ពូជ័យ នៅទ្វារភូមិ";
-                    return "• ចេញទៅវាលស្រែ";
+                {
+                    const string race = "\n• (ជម្រើស) ជិះសត្វនៅក្រោល ហើយប្រណាំងជាមួយពូចាន់";
+                    if (!talkedElder) return "• ជួបតាមាស ចាស់ភូមិ នៅកណ្ដាលភូមិ" + race;
+                    if (!gate0.open) return "• ឆ្លើយសំណួររបស់ពូជ័យ នៅទ្វារភូមិ" + race;
+                    return "• ចេញទៅវាលស្រែ" + race;
+                }
                 case 1:
                     if (gate1.open) return "• ទ្វារព្រៃឫស្សីបើកហើយ — ឡើងទៅភ្នំ";
                     int pr = (plates[0].pressed ? 1 : 0) + (plates[1].pressed ? 1 : 0);
