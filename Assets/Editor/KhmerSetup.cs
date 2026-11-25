@@ -65,7 +65,29 @@ namespace KhmerHeroes.EditorTools
             };
             var rep = BuildPipeline.BuildPlayer(opts);
             Debug.Log("[វីរជនខ្មែរ] Build: " + rep.summary.result + " → " + opts.locationPathName);
-            if (rep.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded) EditorUtility.RevealInFinder(opts.locationPathName);
+            if (rep.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded) return;
+            // បង្កើតឯកសារ zip សម្រាប់ចែកចាយ (ដកថតសម្រាប់ debug ចេញ)
+            const string zip = "Builds/KhmerHeroes-Windows.zip";
+            try
+            {
+                if (System.IO.File.Exists(zip)) System.IO.File.Delete(zip);
+                var src = System.IO.Path.GetFullPath("Builds/Windows");
+                using (var fs = new System.IO.FileStream(zip, System.IO.FileMode.Create))
+                using (var za = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Create))
+                {
+                    foreach (var f in System.IO.Directory.GetFiles(src, "*", System.IO.SearchOption.AllDirectories))
+                    {
+                        var rel = f.Substring(src.Length + 1).Replace('\\', '/');
+                        if (rel.Contains("DontShipItWithYourGame")) continue;
+                        var entry = za.CreateEntry("KhmerHeroes/" + rel, System.IO.Compression.CompressionLevel.Optimal);
+                        using (var es = entry.Open())
+                        using (var inp = System.IO.File.OpenRead(f)) inp.CopyTo(es);
+                    }
+                }
+                Debug.Log("[វីរជនខ្មែរ] បានបង្កើត " + zip);
+                EditorUtility.RevealInFinder(zip);
+            }
+            catch (System.Exception ex) { Debug.LogWarning("Zip: " + ex.Message); EditorUtility.RevealInFinder(opts.locationPathName); }
         }
 
         const string NetPrefabPath = "Assets/Resources/NetPlayer.prefab";

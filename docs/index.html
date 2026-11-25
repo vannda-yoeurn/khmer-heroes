@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>វីរជនខ្មែរ · ហ្គេមផ្សងព្រេងខ្មែរ</title>
+<meta name="description" content="វីរជនខ្មែរ — ហ្គេមផ្សងព្រេង 3D ដែលមានវីរជនខ្មែរបួននាក់ ប្រយុទ្ធ ដោះប្រស្នា ឆ្លើយសំណួរ ប្រណាំងសត្វជំនិះ និងឆ្លងកោះឧបសគ្គជាមួយមិត្តភក្តិតាមអ៊ីនធឺណិត។">
+<meta property="og:title" content="វីរជនខ្មែរ · ហ្គេមផ្សងព្រេងខ្មែរ">
+<meta property="og:description" content="ប្រយុទ្ធ ដោះប្រស្នា ប្រណាំងសត្វជំនិះ និងលេងជាមួយមិត្តភក្តិ — ទាញយកដោយឥតគិតថ្លៃសម្រាប់ Windows។">
+<meta property="og:image" content="https://vannda-yoeurn.github.io/khmer-heroes/img/title.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;700&family=Moul&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#16110c; --bg2:#211910; --card:#2a2016; --line:#5a4428;
+    --gold:#e8b64c; --gold2:#f6d58a; --red:#b3261e; --red2:#d23a2f;
+    --green:#3f7d3a; --text:#f3e9d8; --muted:#c7b59a;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Kantumruy Pro",system-ui,sans-serif;font-size:17px;line-height:1.85}
+  a{color:var(--gold2)}
+  img{max-width:100%;display:block}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  h1,h2,h3{font-family:"Moul",serif;font-weight:400;line-height:1.6;margin:0}
+  h2{font-size:clamp(1.5rem,3.4vw,2.1rem);color:var(--gold);text-align:center}
+  .kbach{display:flex;justify-content:center;gap:7px;margin:12px 0 30px}
+  .kbach i{width:9px;height:9px;background:var(--gold);transform:rotate(45deg)}
+  .kbach i:nth-child(even){background:var(--red2)}
+  section{padding:76px 0}
+  section:nth-of-type(even){background:var(--bg2)}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;background:rgba(22,17,12,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:20px;height:60px}
+  nav .logo{font-family:"Moul",serif;color:var(--gold);text-decoration:none;font-size:1.15rem;margin-right:auto}
+  nav .links a{color:var(--muted);text-decoration:none;font-size:.95rem;margin-left:18px}
+  nav .links a:hover{color:var(--gold2)}
+  @media(max-width:760px){nav .links{display:none}}
+
+  /* hero */
+  .hero{position:relative;min-height:88vh;display:flex;align-items:center;text-align:center;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:url(img/title.jpg) center/cover no-repeat;filter:saturate(1.1)}
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(22,17,12,.55) 0%,rgba(22,17,12,.88) 70%,var(--bg) 100%)}
+  .hero .wrap{position:relative;z-index:1}
+  .hero h1{font-size:clamp(2.8rem,9vw,5.4rem);color:var(--gold);text-shadow:0 4px 0 #6b3c0d,0 10px 30px rgba(0,0,0,.6)}
+  .hero .sub{font-size:clamp(1.1rem,2.6vw,1.45rem);color:var(--gold2);margin:6px 0 4px}
+  .hero p.lead{max-width:680px;margin:14px auto 30px;color:var(--text)}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:12px;font-weight:700;font-size:1.05rem;text-decoration:none;border:2px solid transparent;transition:transform .15s,box-shadow .15s}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-dl{background:linear-gradient(#d23a2f,#9e2018);color:#fff;border-color:var(--gold);box-shadow:0 8px 24px rgba(210,58,47,.35)}
+  .btn-ghost{color:var(--gold2);border-color:var(--line);background:rgba(0,0,0,.35)}
+  .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  .small{font-size:.88rem;color:var(--muted);margin-top:14px}
+
+  /* story */
+  .story{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center}
+  .story img{border-radius:14px;border:2px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+  .zones{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .zones span{background:var(--card);border:1px solid var(--line);border-radius:30px;padding:3px 14px;font-size:.92rem;color:var(--gold2)}
+  @media(max-width:860px){.story{grid-template-columns:1fr}}
+
+  /* heroes */
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media(max-width:960px){.grid4{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:540px){.grid4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px}
+  .card h3{color:var(--gold);font-size:1.2rem}
+  .card .role{color:var(--red2);font-weight:700;font-size:.95rem}
+  .card p{margin:8px 0 0;font-size:.95rem}
+  .card .skill{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:.9rem;color:var(--muted)}
+  .card .skill b{color:var(--gold2)}
+  .wide{margin-top:30px;border-radius:14px;border:2px solid var(--line)}
+
+  /* mounts */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:860px){.grid3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.grid3{grid-template-columns:1fr}}
+  .mount{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .mount .em{font-size:2.2rem;line-height:1}
+  .mount b{color:var(--gold);font-size:1.05rem}
+  .mount div div{font-size:.92rem;color:var(--muted)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}
+  .two img{border-radius:14px;border:2px solid var(--line)}
+  @media(max-width:760px){.two{grid-template-columns:1fr}}
+
+  /* modes */
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:6px}
+  @media(max-width:860px){.modes{grid-template-columns:1fr}}
+  .mode{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .mode h3{font-size:1.05rem;color:var(--gold)}
+  .mode p{margin:6px 0 0;font-size:.95rem}
+
+  /* gallery */
+  .gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:760px){.gallery{grid-template-columns:repeat(2,1fr)}}
+  .gallery img{border-radius:10px;cursor:zoom-in;aspect-ratio:16/9;object-fit:cover;width:100%;border:1px solid var(--line);transition:transform .2s}
+  .gallery img:hover{transform:scale(1.02)}
+  #lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:50;cursor:zoom-out;padding:20px}
+  #lb img{max-height:92vh;border-radius:10px}
+
+  /* keys */
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden}
+  td{padding:10px 16px;border-bottom:1px solid var(--line);font-size:.97rem}
+  td:first-child{width:38%;color:var(--gold2);font-weight:700}
+  kbd{background:#3a2d1e;border:1px solid var(--line);border-bottom-width:3px;border-radius:6px;padding:1px 8px;font-family:inherit;font-size:.9rem}
+
+  /* download */
+  .dl{text-align:center}
+  .steps{max-width:720px;margin:26px auto 0;text-align:left;counter-reset:s;list-style:none;padding:0}
+  .steps li{counter-increment:s;position:relative;padding:10px 0 10px 54px}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:10px;width:38px;height:38px;border-radius:50%;background:var(--red);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .note{max-width:720px;margin:22px auto 0;background:var(--card);border-left:4px solid var(--gold);padding:14px 18px;border-radius:8px;text-align:left;font-size:.95rem}
+  footer{padding:34px 0;text-align:center;color:var(--muted);font-size:.92rem;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#">វីរជនខ្មែរ</a>
+    <div class="links">
+      <a href="#story">រឿង</a>
+      <a href="#heroes">វីរជន</a>
+      <a href="#mounts">សត្វជំនិះ</a>
+      <a href="#multi">លេងច្រើននាក់</a>
+      <a href="#how">របៀបលេង</a>
+      <a href="#download">ទាញយក</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>វីរជនខ្មែរ</h1>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="sub">ដំណើរស្វែងរកស្រូវពូជ</div>
+    <p class="lead">ហ្គេមផ្សងព្រេង 3D ដែលអ្នកនឹងដឹកនាំយុវជនខ្មែរបួននាក់ ឆ្លងកាត់វាលស្រែ ព្រៃឫស្សី ភ្នំ និងទន្លេ ដើម្បីយកស្រូវពូជរបស់ភូមិមកវិញ ព្រមទាំងប្រណាំងសត្វជំនិះកំប្លែងៗ និងឆ្លងកោះឧបសគ្គជាមួយមិត្តភក្តិ។</p>
+    <div class="btns">
+      <a class="btn btn-dl" href="https://github.com/vannda-yoeurn/khmer-heroes/releases/latest">⬇ ទាញយកសម្រាប់ Windows</a>
+      <a class="btn btn-ghost" href="#story">ស្គាល់ហ្គេមបន្ថែម</a>
+    </div>
+    <div class="small">ឥតគិតថ្លៃ · Windows 10/11 (64-bit) · ភាសាខ្មែរទាំងស្រុង</div>
+  </div>
+</header>
+
+<section id="story">
+  <div class="wrap story">
+    <div>
+      <h2 style="text-align:left">សាច់រឿង</h2>
+      <div class="kbach" style="justify-content:flex-start"><i></i><i></i><i></i><i></i><i></i></div>
+      <p>កាលពីព្រេងនាយ មានភូមិមួយនៅជាប់ជើងភ្នំ ដែលព័ទ្ធជុំវិញដោយវាលស្រែលាតសន្ធឹង និងដើមត្នោតខ្ពស់ៗ។ មុនរដូវវស្សាបន្តិច ក្រុមចោរព្រៃបានលួចកញ្ជើស្រូវពូជរបស់ភូមិទាំងអស់ ហើយរត់ទៅលាក់នៅជំរុំរបស់វានៅត្រើយទន្លេម្ខាង។</p>
+      <p>បើគ្មានស្រូវពូជទេ អ្នកភូមិនឹងមិនអាចសាបព្រួសបានឡើយ ដូច្នេះយុវជនក្លាហានបួននាក់បានស្ម័គ្រចិត្តចេញដំណើរ ដើម្បីយកវាមកវិញ។ តាមផ្លូវ អ្នកនឹងត្រូវប្រយុទ្ធជាមួយចោរ ជ្រូកព្រៃ ខ្លា និងក្រពើ ដោះប្រស្នាទ្វារ និងកូនសោ ព្រមទាំងឆ្លើយសំណួរចំណេះដឹងអំពីប្រទេសកម្ពុជា។</p>
+      <div class="zones">
+        <span>ភូមិជើងភ្នំ</span><span>វាលស្រែ និងព្រៃឫស្សី</span><span>ភ្នំខ្លា</span><span>ទន្លេក្រពើ</span><span>ជំរុំចោរព្រៃ</span>
+      </div>
+    </div>
+    <img src="img/village.jpg" alt="វីរជនដើរក្នុងភូមិជើងភ្នំ" loading="lazy">
+  </div>
+</section>
+
+<section id="heroes">
+  <div class="wrap">
+    <h2>វីរជនទាំងបួន</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="grid4">
+      <div class="card">
+        <h3>សុខា</h3><div class="role">អ្នកដាវ</div>
+        <p>យុវជនក្លាហាន ស្ទាត់ជំនាញដាវ។ គាត់វាយបានជាប់ៗគ្នាបីដង ហើយការពារខ្លួនបានល្អ។</p>
+        <div class="skill"><b>ក្បាច់វិលដាវ</b> — វិលដាវជុំវិញខ្លួន វាយសត្រូវទាំងអស់ដែលនៅជិត។</div>
+      </div>
+      <div class="card">
+        <h3>ចន្ទា</h3><div class="role">អ្នកបាញ់ធ្នូ</div>
+        <p>យុវតីភ្នែកមុត បាញ់ធ្នូពីចម្ងាយ ដែលល្អបំផុតសម្រាប់វាយខ្លា និងក្រពើដែលមិនគួរចូលជិត។</p>
+        <div class="skill"><b>ព្រួញបី</b> — បាញ់ព្រួញបីគ្រាប់ព្រមគ្នាជារាងកង្ហារ។</div>
+      </div>
+      <div class="card">
+        <h3>ដារ៉ា</h3><div class="role">អ្នកគុនល្បុក្កតោ</div>
+        <p>កំលោះមាំមួន ស្ទាត់ក្បាច់គុនល្បុក្កតោ។ គាត់មានឈាមច្រើន និងវាយធ្ងន់ ប៉ុន្តែដើរយឺតបន្តិច។</p>
+        <div class="skill"><b>ក្បាច់បោកដី</b> — បោកដំបងលើដី ច្រានសត្រូវចេញ ហើយធ្វើឲ្យវាវិលមុខមួយភ្លែត។</div>
+      </div>
+      <div class="card">
+        <h3>ស្រីពៅ</h3><div class="role">អ្នកកាំបិតភ្លោះ</div>
+        <p>នារីរហ័សរហួនដែលកាន់កាំបិតពីរ។ នាងវាយលឿនបំផុត និងគេចបានរហ័សជាងគេ។</p>
+        <div class="skill"><b>ក្បាច់ផ្លេកបន្ទោរ</b> — ស្ទុះទៅមុខយ៉ាងលឿន វាយគ្រប់សត្រូវដែលឆ្លងកាត់។</div>
+      </div>
+    </div>
+    <img class="wide" src="img/heroes.jpg" alt="ផ្ទាំងជ្រើសរើសវីរជន" loading="lazy">
+    <p style="text-align:center;color:var(--muted);margin-top:14px">អ្នកអាចប្ដូរវីរជនបានគ្រប់ពេល ដោយចុចលេខ <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd>។</p>
+  </div>
+</section>
+
+<section id="mounts">
+  <div class="wrap">
+    <h2>សត្វជំនិះ និងការប្រណាំង</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <p style="text-align:center;max-width:760px;margin:0 auto 26px">នៅក្នុងភូមិមានក្រោលសត្វជំនិះ ដែលអ្នកអាចឡើងជិះបានដោយចុច <kbd>F</kbd>។ ពូចាន់រៀបចំការប្រណាំងប្រចាំភូមិ ២ ជុំ ដែលអ្នកត្រូវប្រកួតជាមួយស្រីល័ក្ខជិះឆ្មាយក្ស ពូធំជិះដំរី និងអាតូចជិះឆ្កែ។ ប្រយ័ត្នសំបកចេកដែលធ្វើឲ្យរអិលវិល និងភក់ដែលធ្វើឲ្យយឺត ប៉ុន្តែអំពៅនឹងជួយឲ្យអ្នកលឿនខ្លាំង!</p>
+    <div class="grid3">
+      <div class="mount"><span class="em">🐎</span><div><b>សេះ</b><div>លឿន ហើយលោតបានល្អ</div></div></div>
+      <div class="mount"><span class="em">🐘</span><div><b>ដំរី</b><div>យឺត តែបុកសត្រូវហោះឆ្ងាយ</div></div></div>
+      <div class="mount"><span class="em">🐅</span><div><b>ខ្លាស្លូត</b><div>លោតខ្ពស់ ហើយបុកខ្លាំង</div></div></div>
+      <div class="mount"><span class="em">🐈</span><div><b>ឆ្មាយក្ស</b><div>លោតខ្ពស់ជាងគេ មៀវៗ</div></div></div>
+      <div class="mount"><span class="em">🐕</span><div><b>ឆ្កែ</b><div>លឿនជាងគេ កន្ទុយគ្រវីមិនឈប់</div></div></div>
+      <div class="mount"><span class="em">🐃</span><div><b>ក្របី</b><div>មាំ ស្នែងធំ បុកខ្លាំង</div></div></div>
+    </div>
+    <div class="two">
+      <img src="img/race.jpg" alt="ការប្រណាំងសត្វជំនិះ" loading="lazy">
+      <img src="img/race2.jpg" alt="ជិះដំរី និងឆ្មាយក្សប្រណាំងគ្នា" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="multi">
+  <div class="wrap">
+    <h2>កោះឧបសគ្គ · លេងច្រើននាក់</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <p style="text-align:center;max-width:760px;margin:0 auto 26px">ឆ្លងកាត់ឈើយោល ដងបក់ ដូងរមៀល ក្បូនរសាត់ ក្រាលដែលធ្លាក់ និងស្គរលោត ដើម្បីទៅដល់ទង់ចុងក្រោយ។ អ្នកអាចលេងម្នាក់ឯង ឬអញ្ជើញមិត្តភក្តិរហូតដល់ ៤ នាក់ ឲ្យចូលបន្ទប់តាមអ៊ីនធឺណិតដោយប្រើលេខកូដ ឬតាម Wi-Fi តែមួយ។</p>
+    <div class="modes">
+      <div class="mode"><h3>ម្នាក់ឯង</h3><p>ហ្វឹកហាត់ឆ្លងកោះ ហើយព្យាយាមបំបែកពេលវេលាល្អបំផុតរបស់ខ្លួន។</p></div>
+      <div class="mode"><h3>សាមគ្គី</h3><p>ទ្វារខ្លះបើកបានលុះត្រាតែគ្រប់គ្នាឈរលើផ្ទាំងចុចព្រមគ្នា — ត្រូវជួយគ្នាទើបទៅដល់។</p></div>
+      <div class="mode"><h3>ប្រកួត</h3><p>រត់ប្រជែងគ្នាទៅទង់ ហើយអាចរុញគូប្រកួតឲ្យធ្លាក់ទឹកបានទៀតផង!</p></div>
+    </div>
+    <div class="two">
+      <img src="img/lobby.jpg" alt="ផ្ទាំងបង្កើតបន្ទប់កោះឧបសគ្គ" loading="lazy">
+      <img src="img/coop.jpg" alt="អ្នកលេងពីរនាក់នៅលើកោះឧបសគ្គ" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="gallery">
+  <div class="wrap">
+    <h2>រូបភាពពីក្នុងហ្គេម</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="gallery">
+      <img src="img/title.jpg" alt="ផ្ទាំងដើម" loading="lazy">
+      <img src="img/hero.jpg" alt="វីរជនក្នុងសម្លៀកបំពាក់ខ្មែរ" loading="lazy">
+      <img src="img/quiz.jpg" alt="សំណួរចំណេះដឹងអំពីកម្ពុជា" loading="lazy">
+      <img src="img/village.jpg" alt="ភូមិជើងភ្នំ" loading="lazy">
+      <img src="img/race.jpg" alt="ការប្រណាំង" loading="lazy">
+      <img src="img/coop.jpg" alt="កោះឧបសគ្គ" loading="lazy">
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap" style="max-width:820px">
+    <h2>របៀបលេង</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <table>
+      <tr><td>ដើរ</td><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td></tr>
+      <tr><td>បង្វិលកាមេរ៉ា</td><td>រំកិលកណ្ដុរ</td></tr>
+      <tr><td>វាយ</td><td>កណ្ដុរឆ្វេង ឬ <kbd>J</kbd></td></tr>
+      <tr><td>ក្បាច់ពិសេស</td><td>កណ្ដុរស្ដាំ ឬ <kbd>Q</kbd></td></tr>
+      <tr><td>គេច / ស្ទុះ</td><td><kbd>Shift</kbd></td></tr>
+      <tr><td>លោត</td><td><kbd>Space</kbd></td></tr>
+      <tr><td>និយាយ · ប្រើ · ឡើងជិះ</td><td><kbd>F</kbd></td></tr>
+      <tr><td>ចុះពីសត្វជំនិះ</td><td><kbd>R</kbd></td></tr>
+      <tr><td>ប្ដូរវីរជន</td><td><kbd>1</kbd> – <kbd>4</kbd></td></tr>
+      <tr><td>សម្ដែងអារម្មណ៍ (កោះឧបសគ្គ)</td><td><kbd>5</kbd> – <kbd>8</kbd></td></tr>
+      <tr><td>ផ្អាកហ្គេម</td><td><kbd>Esc</kbd></td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="download" class="dl">
+  <div class="wrap">
+    <h2>ទាញយកហ្គេម</h2>
+    <div class="kbach"><i></i><i></i><i></i><i></i><i></i></div>
+    <a class="btn btn-dl" href="https://github.com/vannda-yoeurn/khmer-heroes/releases/latest">⬇ ទាញយកសម្រាប់ Windows</a>
+    <ol class="steps">
+      <li>ចុចប៊ូតុងខាងលើ រួចនៅក្នុងទំព័រ GitHub សូមចុចលើឯកសារ <b>KhmerHeroes-Windows.zip</b> ដើម្បីទាញយក។</li>
+      <li>ចុចស្ដាំលើឯកសារ zip ហើយជ្រើសរើស «Extract All…» ដើម្បីពន្លាវាទៅក្នុងថតមួយ។</li>
+      <li>បើកថត <b>KhmerHeroes</b> រួចចុចពីរដងលើ <b>KhmerHeroes.exe</b> ដើម្បីចាប់ផ្ដើមលេង។</li>
+    </ol>
+    <div class="note">ប្រសិនបើ Windows បង្ហាញផ្ទាំង «Windows protected your PC» សូមចុច <b>More info</b> រួចចុច <b>Run anyway</b>។ ផ្ទាំងនេះលេចឡើង ដោយសារហ្គេមនេះមិនទាន់មានហត្ថលេខាឌីជីថលពីក្រុមហ៊ុនណាមួយ។ ពេលលេងតាមអ៊ីនធឺណិតលើកដំបូង Windows Firewall អាចសួរសិទ្ធិ សូមចុច <b>Allow</b>។</div>
+    <p class="small">ចង់មើលកូដ ឬបើកគម្រោងនេះក្នុង Unity? សូមចូលទៅ <a href="https://github.com/vannda-yoeurn/khmer-heroes">github.com/vannda-yoeurn/khmer-heroes</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">វីរជនខ្មែរ · បង្កើតដោយ យឿន វ៉ាន់ដា ជាមួយ Unity · ២០២៦</div>
+</footer>
+
+<div id="lb"><img alt=""></div>
+<script>
+  const lb=document.getElementById('lb'), big=lb.querySelector('img');
+  document.querySelectorAll('.gallery img,.two img,.wide').forEach(im=>{
+    im.style.cursor='zoom-in';
+    im.addEventListener('click',()=>{big.src=im.src;big.alt=im.alt;lb.style.display='flex';});
+  });
+  lb.addEventListener('click',()=>lb.style.display='none');
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')lb.style.display='none';});
+</script>
+</body>
+</html>
